@@ -204,6 +204,7 @@ if __name__ == '__main__':
                                                yoloModel=yoloModel,
                                                image_feature=map_data[0],
                                                pressure_feature=map_data[1])
+                print(key_points)
                 socket_server.send(code=statusCode.TEST_PREDICTION_CONNECT_MOVEMENT_PREDICTION,
                                    msg=datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
                                    data=key_points)

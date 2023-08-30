@@ -153,9 +153,7 @@ class HRnetModelPrediction:
             # print(time.time())
             # output = hrnet_seeion.run(['output'], inputs)[0]
             # print(time.time())
-            print(time.time())
             output = self.pose_model(inputs)  #模型直接预测
-            print(time.time())
 
             # compute coordinate
             preds, maxvals = get_final_preds(cfg, output.clone().cpu().numpy(), np.asarray(center), np.asarray(scale))
