@@ -199,11 +199,13 @@ if __name__ == '__main__':
             if len(map_data) > 0:
                 print("predict")
                 # 将对齐的数据进行输入，开始进行预测可用于可视化的人体骨骼关节点
+                print(time.time())
                 key_points = getPose3dRawModel(rawModel=socket_server.raw_model_prediction,
                                                hrnetModel=hrnetModel,
                                                yoloModel=yoloModel,
                                                image_feature=map_data[0],
                                                pressure_feature=map_data[1])
+                print(time.time())
                 socket_server.send(code=statusCode.TEST_PREDICTION_CONNECT_MOVEMENT_PREDICTION,
                                    msg=datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
                                    data=key_points)
