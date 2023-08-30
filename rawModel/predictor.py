@@ -88,12 +88,16 @@ def get_pose2D(hrnetModel, yoloModel, frame):
     return keypoints.reshape(22,2)
 
 def getPose3dRawModel(rawModel, hrnetModel, yoloModel, image_feature, pressure_feature):
-    print("1:", time.time())
     image_feature = get_pose2D(hrnetModel, yoloModel, image_feature) # (22,2)
-    print("2:", time.time())
     visual = torch.tensor(image_feature.reshape((1, 1, 22, 2)), dtype=torch.float, device="cuda:0")
     tactile = torch.tensor(pressure_feature.reshape((1, 1, 120, 120)), dtype=torch.float, device="cuda:0")
+    visual = visual.cpu().numpy()
+    tactile = tactile.cpu().numpy()
+
+    # key_points = rawModel.get_pose3d(tactile, visual)
+    print(time.time())
     key_points = rawModel.get_pose3d(tactile, visual)
+    print(time.time())
     return key_points.tolist()
 
 
