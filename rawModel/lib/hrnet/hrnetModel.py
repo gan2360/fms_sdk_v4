@@ -106,6 +106,10 @@ class HRnetModelPrediction:
 
         
     def gen_video_kpts(self, yoloModel, frame, det_dim=416, num_peroson=1, gen_output=False):
+        """
+        yolo:0.04
+        hr:0.03
+        """
         # Updating configuration
         # args = self.parse_args()
         # self.reset_config(args)
@@ -115,7 +119,9 @@ class HRnetModelPrediction:
         # human_model = yoloModel
         # pose_model = self.model_load(cfg)
         people_sort = Sort(min_hits=0)
+        print(time.time())
         bboxs, scores = yoloModel.yolo_human_det(frame)
+        print(time.time())
         if bboxs is None or not bboxs.any():
             print('No person detected!')
             bboxs = bboxs_pre
@@ -153,7 +159,9 @@ class HRnetModelPrediction:
             # input = inputs.cpu().numpy()
             # output = self.pose_model(inputs)  #模型直接预测
             inputs = {'input':inputs}
+            print(time.time())
             output = self.pose_model.run(['output'], inputs)[0]
+            print(time.time())
             # compute coordinate
             # preds, maxvals = get_final_preds(cfg, output.clone().cpu().numpy(), np.asarray(center), np.asarray(scale))
             preds, maxvals = get_final_preds(cfg, output, np.asarray(center), np.asarray(scale))

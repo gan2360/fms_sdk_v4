@@ -87,7 +87,7 @@ def getPressure(queue, e, e2):
         # pressure = np.delete(pressure, 0 ,axis=0)
         queue.put({"t": time.time(), "d":p_data})
         # print('2---', time.time())
-        time.sleep(0.01)
+        time.sleep(0.0001)
 
 
 def getVideo(queue, e, e2):
@@ -102,7 +102,7 @@ def getVideo(queue, e, e2):
         # resized_image = cv2.resize(img, (target_width, target_height), interpolation=cv2.INTER_LINEAR)
         if ret:
             queue.put({'t':time.time(), 'd':img})
-        time.sleep(0.02)
+        time.sleep(0.0001)
         # print('1---', time.time())
     video.release()
 
@@ -139,24 +139,13 @@ def mapVideoPressure(cQueue, lQueue):
             # 时间戳的对比，如果两个时间戳小于阈值则表示当前压力垫的数据能和图像对对齐，如果超过一个阈值，则表示无法对齐
             if abs(frameDictTimestamp - pressureDictTimestamp) <= 0.06:
                 mPressureData = pressureDictData
-                if not wait_pressure.is_set() or not wait_camera.is_set():
-                    wait_pressure.set()
-                    wait_camera.set()
-                # print("1:  video:{},   press:{}".format(frameDictTimestamp, pressureDictTimestamp))
                 break
-            elif abs(frameDictTimestamp - pressureDictTimestamp) > 0.5:
-                # print("2:  video:{},   press:{}".format(frameDictTimestamp, pressureDictTimestamp))
-                break
+            # elif abs(frameDictTimestamp - pressureDictTimestamp) > 0.5:
+            #     break
 
         if frameDictData is not None and mPressureData is not None:
             return [frameDictData, mPressureData]
     return []
-
-
-
-
-
-
 
 # 预测分数的开始时间和预测分数的结束时间
 currentPredictionScoreTimesStartTime = None
@@ -199,13 +188,11 @@ if __name__ == '__main__':
             if len(map_data) > 0:
                 print("predict")
                 # 将对齐的数据进行输入，开始进行预测可用于可视化的人体骨骼关节点
-                print(time.time())
                 key_points = getPose3dRawModel(rawModel=socket_server.raw_model_prediction,
                                                hrnetModel=hrnetModel,
                                                yoloModel=yoloModel,
                                                image_feature=map_data[0],
                                                pressure_feature=map_data[1])
-                print(time.time())
                 socket_server.send(code=statusCode.TEST_PREDICTION_CONNECT_MOVEMENT_PREDICTION,
                                    msg=datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
                                    data=key_points)
