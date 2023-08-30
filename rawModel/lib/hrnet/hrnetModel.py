@@ -98,10 +98,11 @@ def model_load(config):
 class HRnetModelPrediction:
     
     def __init__(self):
-        device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-        args = parse_args()
-        reset_config(args)
-        self.pose_model = model_load(cfg)
+        # device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        # args = parse_args()
+        # reset_config(args)
+        # self.pose_model = model_load(cfg)
+        self.pose_model = onnxruntime.InferenceSession('D:\\GuoJ\\fms_predict_sdk_v4\\rawModel\\lib\\hrnet\\hrnet_model.onnx',providers=['CUDAExecutionProvider'])
 
         
     def gen_video_kpts(self, yoloModel, frame, det_dim=416, num_peroson=1, gen_output=False):
@@ -143,19 +144,22 @@ class HRnetModelPrediction:
             inputs, origin_img, center, scale = PreProcess(frame, track_bboxs, cfg, num_peroson)
 
             inputs = inputs[:, [2, 1, 0]]
+            inputs = inputs.numpy()
 
-            if torch.cuda.is_available():
-                inputs = inputs.cuda()
+            # if torch.cuda.is_available():
+            #     inputs = inputs.cuda()
             #-------导入onnx进行预测-----
             # hrnet_seeion = onnxruntime.InferenceSession('D:\\GuoJ\\fms_predict_sdk_v4\\rawModel\\lib\\hrnet\\hrnet_model.onnx',providers=['CUDAExecutionProvider'])
             # input = inputs.cpu().numpy()
-            # inputs = {'input':input}
-            # print(time.time())
-            # output = hrnet_seeion.run(['output'], inputs)[0]
-            # print(time.time())
-            output = self.pose_model(inputs)  #模型直接预测
+            # output = self.pose_model(inputs)  #模型直接预测
+            inputs = {'input':inputs}
+            print(time.time())
+            output = self.pose_model.run(['output'], inputs)[0]
+            print(time.time())
             # compute coordinate
-            preds, maxvals = get_final_preds(cfg, output.clone().cpu().numpy(), np.asarray(center), np.asarray(scale))
+            # preds, maxvals = get_final_preds(cfg, output.clone().cpu().numpy(), np.asarray(center), np.asarray(scale))
+            preds, maxvals = get_final_preds(cfg, output, np.asarray(center), np.asarray(scale))
+
 
         kpts = np.zeros((num_peroson, 17, 2), dtype=np.float32)
         scores = np.zeros((num_peroson, 17), dtype=np.float32)

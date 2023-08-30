@@ -93,7 +93,7 @@ def getPose3dRawModel(rawModel, hrnetModel, yoloModel, image_feature, pressure_f
     tactile = torch.tensor(pressure_feature.reshape((1, 1, 120, 120)), dtype=torch.float, device="cpu")
     tactile = tactile.numpy()
     visual = visual.numpy()
-    key_points = rawModel.get_pose3d(tactile, visual)
+    key_points = rawModel.get_pose3d(tactile, visual).reshape((22,3))
     return key_points.tolist()
 
 
