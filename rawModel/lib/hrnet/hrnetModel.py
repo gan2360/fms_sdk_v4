@@ -144,7 +144,7 @@ class HRnetModelPrediction:
             inputs, origin_img, center, scale = PreProcess(frame, track_bboxs, cfg, num_peroson)
 
             inputs = inputs[:, [2, 1, 0]]
-            inputs = inputs.numpy()
+            inputs = inputs.cpu().numpy()
 
             # if torch.cuda.is_available():
             #     inputs = inputs.cuda()
