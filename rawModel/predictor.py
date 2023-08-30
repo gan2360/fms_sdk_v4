@@ -77,10 +77,8 @@ def normalize_screen_coordinates(X, w, h):
 def get_pose2D(hrnetModel, yoloModel, frame):
     # print('\nGenerating 2D pose...')
     keypoints, scores = hrnetModel.gen_video_kpts(yoloModel, frame, det_dim=416, num_peroson=1, gen_output=True)
-
     keypoints, scores, valid_frames = h36m_coco_format(keypoints, scores)
     # print('Generating 2D pose successful!')
-
     keypoints = keypoints.reshape(17,2)
     keypoints = normalize_screen_coordinates(keypoints, 1280, 720)
     keypoints = rearrange_17to22(keypoints)
@@ -88,9 +86,7 @@ def get_pose2D(hrnetModel, yoloModel, frame):
     return keypoints.reshape(22,2)
 
 def getPose3dRawModel(rawModel, hrnetModel, yoloModel, image_feature, pressure_feature):
-    print("1:", time.time())
     image_feature = get_pose2D(hrnetModel, yoloModel, image_feature) # (22,2)
-    print("2:", time.time())
     visual = torch.tensor(image_feature.reshape((1, 1, 22, 2)), dtype=torch.float, device="cuda:0")
     tactile = torch.tensor(pressure_feature.reshape((1, 1, 120, 120)), dtype=torch.float, device="cuda:0")
     key_points = rawModel.get_pose3d(tactile, visual)
