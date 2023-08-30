@@ -168,8 +168,7 @@ class YoloModelPrediction:
         return bboxs, scores
 
 if __name__ == '__main__':
-    video = cv2.VideoCapture('../../../fmsTestData/video.mp4')
-    ret, img = video.read()
+    img = cv2.imread('./1.jpg')
     CUDA = torch.cuda.is_available()
     if type(img) == str:
         assert os.path.isfile(img), 'The image path does not exist'
@@ -184,7 +183,7 @@ if __name__ == '__main__':
         model,
         img,
         'yolo.onnx',
-        16,
+        11,
         input_names=['input'],
         output_names=['output']
     )
