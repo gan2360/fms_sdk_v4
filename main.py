@@ -140,8 +140,8 @@ def mapVideoPressure(cQueue, lQueue):
             if abs(frameDictTimestamp - pressureDictTimestamp) <= 0.06:
                 mPressureData = pressureDictData
                 break
-            # elif abs(frameDictTimestamp - pressureDictTimestamp) > 0.5:
-            #     break
+            elif abs(frameDictTimestamp - pressureDictTimestamp) > 0.4:
+                break
 
         if frameDictData is not None and mPressureData is not None:
             return [frameDictData, mPressureData]
@@ -170,8 +170,8 @@ if __name__ == '__main__':
     cameraQueue = cameraManager.Queue()
     lokiQueue = lokiManager.Queue()
     # 创建相机，Loki的进程
-    cameraProcessInstance = Process(target=getVideo, args=(cameraQueue, e, e2))
-    lokiProcessInstance = Process(target=getPressure, args=(lokiQueue, e, e2))
+    cameraProcessInstance = Process(target=processCamera, args=(cameraQueue, e, e2))
+    lokiProcessInstance = Process(target=processLoki, args=(lokiQueue, e, e2))
     # 不断循环，刚开始socket 的状态是running，这个状态表示已经关掉了
     while socket_server.status != SocketStatus.CLOSED:
         # 如果获取数据的进程没有启动，并且已经要求开始预测了

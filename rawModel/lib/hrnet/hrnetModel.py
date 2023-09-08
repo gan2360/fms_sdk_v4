@@ -119,9 +119,7 @@ class HRnetModelPrediction:
         # human_model = yoloModel
         # pose_model = self.model_load(cfg)
         people_sort = Sort(min_hits=0)
-        print(time.time())
         bboxs, scores = yoloModel.yolo_human_det(frame)
-        print(time.time())
         if bboxs is None or not bboxs.any():
             print('No person detected!')
             bboxs = bboxs_pre
@@ -159,9 +157,7 @@ class HRnetModelPrediction:
             # input = inputs.cpu().numpy()
             # output = self.pose_model(inputs)  #模型直接预测
             inputs = {'input':inputs}
-            print(time.time())
             output = self.pose_model.run(['output'], inputs)[0]
-            print(time.time())
             # compute coordinate
             # preds, maxvals = get_final_preds(cfg, output.clone().cpu().numpy(), np.asarray(center), np.asarray(scale))
             preds, maxvals = get_final_preds(cfg, output, np.asarray(center), np.asarray(scale))
@@ -171,7 +167,6 @@ class HRnetModelPrediction:
         scores = np.zeros((num_peroson, 17), dtype=np.float32)
         for i, kpt in enumerate(preds):
             kpts[i] = kpt
-
         for i, score in enumerate(maxvals):
             scores[i] = score.squeeze()
 
@@ -204,7 +199,6 @@ if __name__ == '__main__':
     inputs = inputs[:, [2, 1, 0]]
     x = inputs.cuda()
     output = pose_model(x)
-    print(output)
     with torch.no_grad():
         torch.onnx.export(
             pose_model,

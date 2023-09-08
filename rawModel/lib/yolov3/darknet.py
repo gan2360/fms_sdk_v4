@@ -287,14 +287,13 @@ class Darknet(nn.Module):
 
             module_type = (modules[i]["type"])
             if module_type == "convolutional" or module_type == "upsample" or module_type == "maxpool":
-
                 x = self.module_list[i](x)
                 outputs[i] = x
 
             elif module_type == "route":
                 layers = modules[i]["layers"]
                 layers = [int(a) for a in layers]
-
+                # type(layers) = list
                 if (layers[0]) > 0:
                     layers[0] = layers[0] - i
 
@@ -346,7 +345,6 @@ class Darknet(nn.Module):
             return 0
 
     def load_weights(self, weightfile):
-        # Introduction: https://blog.paperspace.com/how-to-implement-a-yolo-v3-object-detector-from-scratch-in-pytorch-part-3/
         # Open the weights file
         # weightfile = os.path.join(sys.path[-1], weightfile)
         fp = open(weightfile, "rb")

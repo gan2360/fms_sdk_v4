@@ -187,6 +187,3 @@ if __name__ == '__main__':
         input_names=['input'],
         output_names=['output']
     )
-    # video = cv2.VideoCapture('../../../fmsTestData/video.mp4')
-    # ret, img = video.read()
-    # cv2.imwrite('./1.jpg', img)

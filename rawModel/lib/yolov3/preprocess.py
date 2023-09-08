@@ -10,13 +10,13 @@ def letterbox_image(img, inp_dim):
     '''resize image with unchanged aspect ratio using padding'''
     img_w, img_h = img.shape[1], img.shape[0]
     w, h = inp_dim
-    new_w = int(img_w * min(w/img_w, h/img_h))
-    new_h = int(img_h * min(w/img_w, h/img_h))
-    resized_image = cv2.resize(img, (new_w, new_h), interpolation=cv2.INTER_CUBIC)
+    new_w = int(img_w * min(w/img_w, h/img_h)) # 确定等比例缩小宽度
+    new_h = int(img_h * min(w/img_w, h/img_h)) # 确定等比例缩小高度
+    resized_image = cv2.resize(img, (new_w, new_h), interpolation=cv2.INTER_CUBIC) # 缩放图片
 
-    canvas = np.full((inp_dim[1], inp_dim[0], 3), 128)
+    canvas = np.full((inp_dim[1], inp_dim[0], 3), 128) # 初始化一个cvanvas
 
-    canvas[(h - new_h) // 2:(h - new_h) // 2 + new_h, (w - new_w) // 2:(w - new_w) // 2 + new_w, :] = resized_image
+    canvas[(h - new_h) // 2:(h - new_h) // 2 + new_h, (w - new_w) // 2:(w - new_w) // 2 + new_w, :] = resized_image  # 把缩放后的图片放到这个canvas的中间
 
     return canvas
 
@@ -32,9 +32,9 @@ def prep_image(img, inp_dim):
     else:
         orig_im = img
     dim = orig_im.shape[1], orig_im.shape[0]
-    img = (letterbox_image(orig_im, (inp_dim, inp_dim)))
-    img_ = img[:, :, ::-1].transpose((2, 0, 1)).copy()
-    img_ = torch.from_numpy(img_).float().div(255.0).unsqueeze(0)
+    img = (letterbox_image(orig_im, (inp_dim, inp_dim))) # 调整图片的尺寸
+    img_ = img[:, :, ::-1].transpose((2, 0, 1)).copy() # 更换图像的颜色通道
+    img_ = torch.from_numpy(img_).float().div(255.0).unsqueeze(0) # 归一化，并增加一个维度
     return img_, orig_im, dim
 
 
