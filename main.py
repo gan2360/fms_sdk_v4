@@ -147,17 +147,21 @@ def mapVideoPressure(cQueue, lQueue):
             return [frameDictData, mPressureData]
     return []
 
+def mapData(camera, ser_op):
+    img = camera.get_frame()
+    pressure = ser_op.get_all_pressure()
+    processedPressure = concat_pressure(pressure)
+    return [img, processedPressure]
+
+
 # 预测分数的开始时间和预测分数的结束时间
 currentPredictionScoreTimesStartTime = None
 currentPredictionScoreTimesEndTime = None
 
 if __name__ == '__main__':
+
     e = Event() #摄像头是否准备好
     e2 = Event() #压力垫是否准备好
-    wait_camera = Event() # 是否要等待摄像头
-    wait_camera.set()
-    wait_pressure = Event() # 是否要等待压力垫
-    wait_pressure.set()
     processInstancesAlive = False
     hrnetModel = HRnetModelPrediction()
     yoloModel = YoloModelPrediction()
@@ -165,26 +169,28 @@ if __name__ == '__main__':
     # socket_server = SocketServer("192.168.10.110")
     socket_server = SocketServer("127.0.0.1")
     # 用于获取数据。通过的是输入输出队列
-    cameraManager = multiprocessing.Manager()
-    lokiManager = multiprocessing.Manager()
-    cameraQueue = cameraManager.Queue()
-    lokiQueue = lokiManager.Queue()
-    # 创建相机，Loki的进程
-    cameraProcessInstance = Process(target=processCamera, args=(cameraQueue, e, e2))
-    lokiProcessInstance = Process(target=processLoki, args=(lokiQueue, e, e2))
+    # cameraManager = multiprocessing.Manager()
+    # lokiManager = multiprocessing.Manager()
+    # cameraQueue = cameraManager.Queue()
+    # lokiQueue = lokiManager.Queue()
+    # # 创建相机，Loki的进程
+    # cameraProcessInstance = Process(target=processCamera, args=(cameraQueue, e, e2))
+    # lokiProcessInstance = Process(target=processLoki, args=(lokiQueue, e, e2))
     # 不断循环，刚开始socket 的状态是running，这个状态表示已经关掉了
     while socket_server.status != SocketStatus.CLOSED:
         # 如果获取数据的进程没有启动，并且已经要求开始预测了
         # 则启动两个进程
         # 并修改状态
         if not processInstancesAlive and socket_server.start_predict:
-            cameraProcessInstance.start()
-            lokiProcessInstance.start()
+            # cameraProcessInstance.start()
+            # lokiProcessInstance.start()
+            camera = CameraClient()
+            ser_op = SerialeOp()
             processInstancesAlive = True
         # 如果状态为T，两个进程都已经启动，将两个存储了数据的队列进行对齐
         # 返回对齐的数据或者None
         if processInstancesAlive:
-            map_data = mapVideoPressure(cameraQueue, lokiQueue)
+            map_data = mapData(camera, ser_op)
             if len(map_data) > 0:
                 print("predict")
                 # 将对齐的数据进行输入，开始进行预测可用于可视化的人体骨骼关节点
@@ -224,5 +230,5 @@ if __name__ == '__main__':
             socket_server.send(code=statusCode.PARAMETER_MISSING, msg=str(e))
             continue
     # 关闭所有进程
-    cameraProcessInstance.terminate()
-    lokiProcessInstance.terminate()
+    # cameraProcessInstance.terminate()
+    # lokiProcessInstance.terminate()
