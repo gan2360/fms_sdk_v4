@@ -149,17 +149,8 @@ class HRnetModelPrediction:
 
             inputs = inputs[:, [2, 1, 0]]
             inputs = inputs.cpu().numpy()
-
-            # if torch.cuda.is_available():
-            #     inputs = inputs.cuda()
-            #-------导入onnx进行预测-----
-            # hrnet_seeion = onnxruntime.InferenceSession('D:\\GuoJ\\fms_predict_sdk_v4\\rawModel\\lib\\hrnet\\hrnet_model.onnx',providers=['CUDAExecutionProvider'])
-            # input = inputs.cpu().numpy()
-            # output = self.pose_model(inputs)  #模型直接预测
             inputs = {'input':inputs}
             output = self.pose_model.run(['output'], inputs)[0]
-            # compute coordinate
-            # preds, maxvals = get_final_preds(cfg, output.clone().cpu().numpy(), np.asarray(center), np.asarray(scale))
             preds, maxvals = get_final_preds(cfg, output, np.asarray(center), np.asarray(scale))
 
 
@@ -172,39 +163,3 @@ class HRnetModelPrediction:
 
         return kpts.reshape(1,1,17,2), scores.reshape(1,1,17)
 
-if __name__ == '__main__':
-    from rawModel.lib.yolov3.yoloModel import YoloModelPrediction
-    people_sort = Sort(min_hits=0)
-    num_peroson = 1
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-    args = parse_args()
-    reset_config(args)
-    pose_model = model_load(cfg)
-    frame = cv2.imread('./1.jpg')
-    yoloModel = YoloModelPrediction()
-    bboxs, scores = yoloModel.yolo_human_det(frame)
-    people_track = people_sort.update(bboxs)
-    # Track the first two people in the video and remove the ID
-    if people_track.shape[0] == 1:
-        people_track_ = people_track[-1, :-1].reshape(1, 4)
-    elif people_track.shape[0] >= 2:
-        people_track_ = people_track[-num_peroson:, :-1].reshape(num_peroson, 4)
-        people_track_ = people_track_[::-1]
-
-    track_bboxs = []
-    for bbox in people_track_:
-        bbox = [round(i, 2) for i in list(bbox)]
-        track_bboxs.append(bbox)
-    inputs, origin_img, center, scale = PreProcess(frame, track_bboxs, cfg, num_peroson)
-    inputs = inputs[:, [2, 1, 0]]
-    x = inputs.cuda()
-    output = pose_model(x)
-    with torch.no_grad():
-        torch.onnx.export(
-            pose_model,
-            x,
-            'hrnet_model.onnx',
-            opset_version=11,
-            input_names=['input'],
-            output_names=['output']
-        )

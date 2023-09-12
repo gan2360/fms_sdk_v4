@@ -13,7 +13,6 @@
   <component name="PyNamespacePackagesService">
     <option name="namespacePackageFolders">
       <list>
-        <option value="$MODULE_DIR$/rawModel/.ipynb_checkpoints" />
         <option value="$MODULE_DIR$/rawModel/lib" />
       </list>
     </option>

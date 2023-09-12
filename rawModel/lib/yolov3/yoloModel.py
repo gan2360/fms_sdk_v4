@@ -167,23 +167,3 @@ class YoloModelPrediction:
 
         return bboxs, scores
 
-if __name__ == '__main__':
-    img = cv2.imread('./1.jpg')
-    CUDA = torch.cuda.is_available()
-    if type(img) == str:
-        assert os.path.isfile(img), 'The image path does not exist'
-        img = cv2.imread(img)
-    img, ori_img, img_dim = preprocess.prep_image(img, 416)
-    img = img.cuda()
-    model = load_model()
-    with torch.no_grad():
-        output = model(img)
-    device = torch.device('cuda:0')
-    torch.onnx.export(
-        model,
-        img,
-        'yolo.onnx',
-        11,
-        input_names=['input'],
-        output_names=['output']
-    )
