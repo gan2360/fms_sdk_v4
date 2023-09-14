@@ -29,7 +29,7 @@ from utils.exceptions.parameterMissingException import ParameterMissingException
 import numpy as np
 from MySerial.concat import concat_pressure
 from SerialOp.SerialOp import SerialeOp
-
+from server.score import ScoreOp
 
 # -----------------------------test_data_start--------------------------
 
@@ -107,6 +107,7 @@ if __name__ == '__main__':
     key_points = None
     cur_frames = []
     processInstancesAlive = False
+    score_op = ScoreOp()
     hrnetModel = HRnetModelPrediction()
     yoloModel = YoloModelPrediction()
     socket_server = SocketServer("127.0.0.1")
@@ -139,15 +140,15 @@ if __name__ == '__main__':
         # 这一部分是用来发送预测结果分数的，当客户端发来开始预测动作命令时，会将开始时间和结束时间设置，如果结束，则返回预测的分值发送到客户端
         if currentPredictionScoreTimesStartTime is not None and currentPredictionScoreTimesEndTime is not None:
             current_time = datetime.now()
-            cur_frames.append(np.array(key_points))
+            cur_frames.append(key_points)
             if current_time >= currentPredictionScoreTimesEndTime:
                 # 发送一个预测的结果code
-                # score = analayse_frames(curframes)
+                score = score_op.parse_code_get_score(cur_action_code, np.array(cur_frames))
                 print(cur_action_code, cur_frames)
                 cur_frames = []
                 socket_server.send(code=statusCode.TEST_PREDICTION_CONNECT_MOVEMENT_PREDICTION_SCORE,
                                    msg=statusCode.TEST_PREDICTION_CONNECT_MOVEMENT_PREDICTION_SCORE_MSG,
-                                   data=random.randint(1, 3))
+                                   data=score)
                 currentPredictionScoreTimesStartTime = None
                 currentPredictionScoreTimesEndTime = None
         # 客户端读取数据，并根据code进行执行

@@ -43,14 +43,15 @@ def plotKeypoint(fig, keypoints_pred):
     for i in range(BODY_22_pairs.shape[0]):
         index_1 = BODY_22_pairs[i, 0]
         index_2 = BODY_22_pairs[i, 1]
-
         xs_line = [xs[index_1], xs[index_2]]
         ys_line = [ys[index_1], ys[index_2]]
         zs_line = [zs[index_1], zs[index_2]]
         ax.plot(xs_line, ys_line, zs_line, color=BODY_22_color[i] / 255.0)
 
     ax.scatter(xs, ys, zs, s=50, c=BODY_22_color[:22] / 255.0)
-
+    # for x, y, z in zip(xs, ys, zs):
+    #     label = f'({z:.2f})'
+    #     ax.text(x, y, z, label, color='black', fontsize=5, )
     fig.canvas.draw()
     frame = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8, sep='')
     img = frame.reshape(fig.canvas.get_width_height()[::-1] + (3,))[..., ::-1]
@@ -123,7 +124,7 @@ if __name__ == '__main__':
                                 # cv2.imshow('Local Camera', img)
                                 out.write(img)
                                 print(index)
-                                if index == 100:
+                                if index == 30:
                                     out.release()
                                     print("finish")
                                     break
