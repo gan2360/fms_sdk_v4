@@ -114,12 +114,12 @@ class ScoreOp:
             p_12_dis_2 = np.linalg.norm(p_12_last - p_12_half)
             p_12_dis_min= min(p_12_dis_1, p_12_dis_2)
             p_2_y = movements[:, 2, 1]
-            p_2_x = movements[:, 2, 0]
+            # p_2_x = movements[:, 2, 0]
             p_9_y = movements[:, 9, 1]
-            p_9_x = movements[:, 9, 0]
+            # p_9_x = movements[:, 9, 0]
             y_dist = np.abs(p_9_y - p_2_y)
-            z_dist = np.abs(p_9_x - p_2_x)
-            below_offset_sum = max(np.sum(y_dist > 3), np.sum(z_dist > 3))
+            # z_dist = np.abs(p_9_x - p_2_x)
+            below_offset_sum = max(np.sum(y_dist > 3))
             below_offset_rate = below_offset_sum / len
             p_21 = movements[:, 21]
             p_18 = movements[:, 18]
@@ -132,7 +132,7 @@ class ScoreOp:
             angles_deg_offset_rate = angles_deg_offset_sum / len
             if below_offset_rate <= 0.2 and angles_deg_offset_rate <= 0.2 and p_12_dis_min < 3:
                 score = 3
-            elif below_offset_rate > 0.5 or angles_deg_offset_rate > 0.5 or p_12_dis_min > 8:
+            elif below_offset_rate > 0.5 or angles_deg_offset_rate > 0.5 or p_12_dis_min > 5:
                 score = 1
             else:
                 score = 2
@@ -147,12 +147,12 @@ class ScoreOp:
             p_6_dis_2 = np.linalg.norm(p_6_last - p_6_half)
             p_6_dis_min= min(p_6_dis_1, p_6_dis_2)
             p_3_y = movements[:, 3, 1]
-            p_3_x = movements[:, 3, 0]
+            # p_3_x = movements[:, 3, 0]
             p_8_y = movements[:, 8, 1]
-            p_8_x = movements[:, 8, 0]
+            # p_8_x = movements[:, 8, 0]
             y_dist = np.abs(p_8_y - p_3_y)
-            z_dist = np.abs(p_8_x - p_3_x)
-            below_offset_sum = max(np.sum(y_dist > 3), np.sum(z_dist > 3))
+            # z_dist = np.abs(p_8_x - p_3_x)
+            below_offset_sum = max(np.sum(y_dist > 3))
             below_offset_rate = below_offset_sum / len
             p_21 = movements[:, 21]
             p_18 = movements[:, 18]
@@ -176,9 +176,9 @@ class ScoreOp:
             p_21_z = movements[:, 21, 2]
             p_18_z = movements[:, 18, 2]
             min_distance = np.min(np.abs(p_21_z - p_18_z))
-            if min_distance < 10:
+            if min_distance < 8:
                 score = 3
-            elif min_distance < 15:
+            elif min_distance < 12:
                 score = 2
             else:
                 score = 1
@@ -188,9 +188,9 @@ class ScoreOp:
             p_21_z = movements[:, 21, 2]
             p_18_z = movements[:, 18, 2]
             min_distance = np.min(np.abs(p_21_z - p_18_z))
-            if min_distance < 10:
+            if min_distance < 8:
                 score = 3
-            elif min_distance < 15:
+            elif min_distance < 12:
                 score = 2
             else:
                 score = 1
@@ -254,7 +254,7 @@ class ScoreOp:
             magnitude_1 = np.linalg.norm(v_13_mean)
             magnitude_2 = np.linalg.norm(dot_product)
             angle = 90 - np.degrees(np.arccos(dot_product / (magnitude_2 * magnitude_1)))
-            if angle < 20:
+            if angle < 15:
                 score = 1
             else:
                 score = random.randint(2,3)
