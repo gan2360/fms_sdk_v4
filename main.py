@@ -144,7 +144,6 @@ if __name__ == '__main__':
             if current_time >= currentPredictionScoreTimesEndTime:
                 # 发送一个预测的结果code
                 score = score_op.parse_code_get_score(cur_action_code, np.array(cur_frames))
-                print(cur_action_code, cur_frames)
                 cur_frames = []
                 socket_server.send(code=statusCode.TEST_PREDICTION_CONNECT_MOVEMENT_PREDICTION_SCORE,
                                    msg=statusCode.TEST_PREDICTION_CONNECT_MOVEMENT_PREDICTION_SCORE_MSG,

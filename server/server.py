@@ -230,5 +230,6 @@ class SocketServer:
                 args["current_prediction_score_times_start_time"] = current_prediction_times_start_time
                 args[
                     "current_prediction_score_times_end_time"] = current_prediction_times_start_time + datetime.timedelta(
-                    seconds=2)
+                    seconds=1)
+
         return args
