@@ -73,6 +73,25 @@ class SocketServer:
         # 当前正在预测的动作的预测次数
         self.current_prediction_times = 0
 
+    def reInit(self):
+        self.socket_server.listen()
+        logging.info("========================= WAITING FOR A CONNECTION =========================")
+        print("========================= 等待一个连接 =========================")
+        self.conn, address = self.socket_server.accept()
+        self.conn.setblocking(False)
+        logging.info("========================= SOCKET CONNECTION IS CREATED =========================")
+        print("========================= 连接已经建立 =========================")
+        self.status = SocketStatus.RUNNING
+        self.data = b''
+
+        self.is_loaded = False
+        self.start_predict = False
+
+        # 当前正在预测的动作
+        self.current_prediction_movement = None
+        # 当前正在预测的动作的预测次数
+        self.current_prediction_times = 0
+
     def send(self, code, msg, data=None):
         try:
             data = {"code": code, "data": data, "msg": msg}
@@ -126,6 +145,13 @@ class SocketServer:
         elif code == statusCode.TEST_PREDICTION_CONNECT_START_PREDICTION:
             # 开始进行预测
             self.start_predict = True
+        elif code == statusCode.TEST_PREDICTION_CONNECT_TO_CLOSE:
+            # 客户端主动断开链接
+            self.send(code=statusCode.TEST_PREDICTION_CONNECT_IS_CLOSED,
+                      msg=statusCode.TEST_PREDICTION_CONNECT_IS_CLOSED_MSG)
+            self.close()
+            self.reInit()
+
         elif code == statusCode.TEST_PREDICTION_CONNECT_MOVEMENT_DEEP_SQUAT:
             # TODO：预测深蹲
             self.current_prediction_times = 0

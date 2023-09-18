@@ -119,7 +119,7 @@ class ScoreOp:
             # p_9_x = movements[:, 9, 0]
             y_dist = np.abs(p_9_y - p_2_y)
             # z_dist = np.abs(p_9_x - p_2_x)
-            below_offset_sum = max(np.sum(y_dist > 3))
+            below_offset_sum = np.sum(y_dist > 3)
             below_offset_rate = below_offset_sum / len
             p_21 = movements[:, 21]
             p_18 = movements[:, 18]
@@ -152,7 +152,7 @@ class ScoreOp:
             # p_8_x = movements[:, 8, 0]
             y_dist = np.abs(p_8_y - p_3_y)
             # z_dist = np.abs(p_8_x - p_3_x)
-            below_offset_sum = max(np.sum(y_dist > 3))
+            below_offset_sum = np.sum(y_dist > 3)
             below_offset_rate = below_offset_sum / len
             p_21 = movements[:, 21]
             p_18 = movements[:, 18]
@@ -205,7 +205,7 @@ class ScoreOp:
             p_1 = key_frame[1]
             p_3 = key_frame[3]
             vector_leg_1 = p_9 - p_7
-            vector_leg_2 = p_1 - p_3
+            vector_leg_2 = p_3 - p_1
             dot_product = vector_leg_2.dot(vector_leg_1)
             magnitude_v1 = np.linalg.norm(vector_leg_1)
             magnitude_v2 = np.linalg.norm(vector_leg_2)
@@ -227,7 +227,7 @@ class ScoreOp:
             p_1 = key_frame[1]
             p_3 = key_frame[3]
             vector_leg_1 = p_9 - p_7
-            vector_leg_2 = p_1 - p_3
+            vector_leg_2 = p_3 - p_1
             dot_product = vector_leg_2.dot(vector_leg_1)
             magnitude_v1 = np.linalg.norm(vector_leg_1)
             magnitude_v2 = np.linalg.norm(vector_leg_2)
@@ -281,7 +281,7 @@ class ScoreOp:
             angles_2 = np.degrees(np.arccos(dot_product_2 / (magnitude_2_10 * magnitude_3_10)))
             angles_2_abs = np.abs(angles_1)
             angles_1_abs = np.abs(angles_2)
-            unsatisfy_sum = max(np.sum(angles_1_abs > 15), np.sum(angles_2_abs > 15))
+            unsatisfy_sum = max(np.sum(angles_1_abs < 80), np.sum(angles_2_abs < 80))
             unsatisfy_rate = unsatisfy_sum / len
             if unsatisfy_rate < 0.15:
                 score = 3
@@ -311,7 +311,7 @@ class ScoreOp:
             angles_2 = np.degrees(np.arccos(dot_product_2 / (magnitude_2_11 * magnitude_3_11)))
             angles_2_abs = np.abs(angles_1)
             angles_1_abs = np.abs(angles_2)
-            unsatisfy_sum = max(np.sum(angles_1_abs > 15), np.sum(angles_2_abs > 15))
+            unsatisfy_sum = max(np.sum(angles_1_abs <80 ), np.sum(angles_2_abs > 80))
             unsatisfy_rate = unsatisfy_sum / len
             if unsatisfy_rate < 0.15:
                 score = 3
