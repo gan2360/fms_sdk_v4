@@ -11,6 +11,13 @@ import json
 import logging
 import socket
 import struct
+
+import cv2
+import numpy as np
+
+from rawModel.lib.hrnet.hrnetModel import HRnetModelPrediction
+from rawModel.lib.yolov3.yoloModel import YoloModelPrediction
+from rawModel.predictor import getPose3dRawModel
 from rawModel.rawModel import RawModelPrediction
 from utils import statusCode
 from utils.exceptions.dataDecodeException import DataDecodeException
@@ -83,7 +90,6 @@ class SocketServer:
         print("========================= 连接已经建立 =========================")
         self.status = SocketStatus.RUNNING
         self.data = b''
-
         self.is_loaded = False
         self.start_predict = False
 
@@ -135,11 +141,18 @@ class SocketServer:
         args = {}
         if code == statusCode.TEST_PREDICTION_CONNECT_TO_START:
             # 1. 加载ONNX模型
-            # self.onnx = ONNXModel()
-
             self.raw_model_prediction = RawModelPrediction()
-
+            self.hrnetModel = HRnetModelPrediction()
+            self.yoloModel = YoloModelPrediction()
+            first_img = cv2.imread('./1.jpg')
+            first_press = np.zeros((120, 120))
+            key_points = getPose3dRawModel(rawModel=self.raw_model_prediction,
+                                           hrnetModel=self.hrnetModel,
+                                           yoloModel=self.yoloModel,
+                                           image_feature=first_img,
+                                           pressure_feature=first_press)
             self.is_loaded = True
+
             self.send(code=statusCode.TEST_PREDICTION_CONNECT_IS_STARTED,
                       msg=statusCode.TEST_PREDICTION_CONNECT_IS_STARTED_MSG)
         elif code == statusCode.TEST_PREDICTION_CONNECT_START_PREDICTION:
@@ -147,6 +160,7 @@ class SocketServer:
             self.start_predict = True
         elif code == statusCode.TEST_PREDICTION_CONNECT_TO_CLOSE:
             # 客户端主动断开链接
+            args['stop_connect'] = True
             self.send(code=statusCode.TEST_PREDICTION_CONNECT_IS_CLOSED,
                       msg=statusCode.TEST_PREDICTION_CONNECT_IS_CLOSED_MSG)
             self.close()

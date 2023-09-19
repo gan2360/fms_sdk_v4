@@ -94,7 +94,7 @@ class LocalCamera:
 def mapData(camera, ser_op):
     img = camera.get_frame()
     pressure = ser_op.get_all_pressure()
-    # pressure = concat_pressure(pressure)
+    # pressure = concat_pressure(pressure) # 仅实时需要
     return [img, pressure]
 
 
@@ -108,8 +108,6 @@ if __name__ == '__main__':
     cur_frames = []
     processInstancesAlive = False
     score_op = ScoreOp()
-    hrnetModel = HRnetModelPrediction()
-    yoloModel = YoloModelPrediction()
     socket_server = SocketServer("127.0.0.1")
     while socket_server.status != SocketStatus.CLOSED:
         # 如果获取数据的进程没有启动，并且已经要求开始预测了
@@ -129,14 +127,18 @@ if __name__ == '__main__':
             if len(map_data) > 0:
                 # print("predict")
                 # 将对齐的数据进行输入，开始进行预测可用于可视化的人体骨骼关节点
-                key_points = getPose3dRawModel(rawModel=socket_server.raw_model_prediction,
-                                               hrnetModel=hrnetModel,
-                                               yoloModel=yoloModel,
-                                               image_feature=map_data[0],
-                                               pressure_feature=map_data[1])
-                socket_server.send(code=statusCode.TEST_PREDICTION_CONNECT_MOVEMENT_PREDICTION,
-                                   msg=datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
-                                   data=key_points)
+                try:
+                    key_points = getPose3dRawModel(rawModel=socket_server.raw_model_prediction,
+                                                   hrnetModel=socket_server.hrnetModel,
+                                                   yoloModel=socket_server.yoloModel,
+                                                   image_feature=map_data[0],
+                                                   pressure_feature=map_data[1])
+                    socket_server.send(code=statusCode.TEST_PREDICTION_CONNECT_MOVEMENT_PREDICTION,
+                                       msg=datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
+                                       data=key_points)
+                except Exception as e:
+                    print("出错了:", str(e))
+                    continue
         # 这一部分是用来发送预测结果分数的，当客户端发来开始预测动作命令时，会将开始时间和结束时间设置，如果结束，则返回预测的分值发送到客户端
         if currentPredictionScoreTimesStartTime is not None and currentPredictionScoreTimesEndTime is not None:
             current_time = datetime.now()
@@ -160,6 +162,9 @@ if __name__ == '__main__':
             # 根据code执行
             args = socket_server.parse_code_run_command(code)
             print(args)
+            if 'stop_connect'in args:
+                processInstancesAlive = False
+
             if "current_prediction_score_times_start_time" in args and "current_prediction_score_times_end_time" in args:
                 currentPredictionScoreTimesStartTime = args["current_prediction_score_times_start_time"]
                 currentPredictionScoreTimesEndTime = args["current_prediction_score_times_end_time"]
