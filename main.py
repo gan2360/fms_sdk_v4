@@ -17,57 +17,20 @@ import random
 import cv2
 from camera.camera import CameraClient
 from client.lokiClient import LokiSDKClient
-from client.pressurAlign import align
 from rawModel.predictor import getPose3dRawModel
-from rawModel.lib.yolov3.yoloModel import YoloModelPrediction
-from rawModel.lib.hrnet.hrnetModel import HRnetModelPrediction
 from server.parse import parse_data_from_socket
 from server.server import SocketServer, SocketStatus
 from utils import statusCode
 from utils.exceptions.dataDecodeException import DataDecodeException
 from utils.exceptions.parameterMissingException import ParameterMissingException
 import numpy as np
-from MySerial.concat import concat_pressure
+from MySerial.concat import concat_pressure as align
 from SerialOp.SerialOp import SerialeOp
 from server.score import ScoreOp
 
 # -----------------------------test_data_start--------------------------
 
-def getData(video_path, pressure_path):
-    pressure = np.load(pressure_path)['pressure']
-    video = cv2.VideoCapture(video_path)
-    return pressure, video
 
-
-def getPressure(queue, e, e2):
-    pressure, video = getData('./fmsTestData/video.mp4', './fmsTestData/pressure.npz')
-    e2.set()  # 压力垫启动成功
-    e.wait()  # 等摄像头启动
-    index = 0
-    while 1:
-        p_data = pressure[index]
-        index += 1
-        # pressure = np.delete(pressure, 0 ,axis=0)
-        queue.put({"t": time.time(), "d": p_data})
-        # print('2---', time.time())
-        time.sleep(0.0001)
-
-
-def getVideo(queue, e, e2):
-    pressure, video = getData('./fmsTestData/video.mp4', './fmsTestData/pressure.npz')
-    e.set()  # 摄像头启动成功
-    e2.wait()  # 等待压力垫启动
-    while 1:
-        ret, img = video.read()
-        # original_height, original_width = img.shape[:2]
-        # target_width = int(original_width * 0.5)
-        # target_height = int(original_height * 0.5)
-        # resized_image = cv2.resize(img, (target_width, target_height), interpolation=cv2.INTER_LINEAR)
-        if ret:
-            queue.put({'t': time.time(), 'd': img})
-        time.sleep(0.0001)
-        # print('1---', time.time())
-    video.release()
 
 
 class LocalSerialOp:
@@ -75,7 +38,7 @@ class LocalSerialOp:
         self.pressure = np.load('./fmsTestData/pressure.npz')['pressure']
         self.index = -1
 
-    def get_all_pressure(self):
+    def get_pressure_data(self):
         self.index += 1
         return self.pressure[self.index]
 
@@ -93,8 +56,8 @@ class LocalCamera:
 
 def mapData(camera, ser_op):
     img = camera.get_frame()
-    pressure = ser_op.get_all_pressure()
-    # pressure = concat_pressure(pressure) # 仅实时需要
+    pressure = ser_op.get_pressure_data()
+    # pressure = align(pressure) # 仅实时需要
     return [img, pressure]
 
 

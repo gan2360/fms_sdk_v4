@@ -1,0 +1,9 @@
+opencv-python==4.5.5.62
+crcmod==1.7
+numpy==1.21.0
+torch==1.13.0+cu116
+torchvision==0.14.0+cu116
+pillow==9.2.0
+keyboard==0.13.5
+matplotlib==3.5.2
+onnxruntime-gpu==1.15.1
