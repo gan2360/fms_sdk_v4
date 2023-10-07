@@ -119,8 +119,8 @@ class HRnetModelPrediction:
         # human_model = yoloModel
         # pose_model = self.model_load(cfg)
         people_sort = Sort(min_hits=0)
-        bboxs, scores = yoloModel.yolo_human_det(frame)
-        if bboxs is None or not bboxs.any():
+        bboxs, scores = yoloModel.yolo_human_det(frame)  # bobxs 代表边框的四个角的坐标，frame是原始的1280*720的图像
+        if bboxs is None or not bboxs.any():  # any(), Python 中用于判断可迭代对象（如列表、元组）中的元素是否满足某个条件的方法。它返回一个布尔值
             print('No person detected!')
             bboxs = bboxs_pre
             scores = scores_pre
@@ -145,7 +145,7 @@ class HRnetModelPrediction:
 
         with torch.no_grad():
             # bbox is coordinate location
-            inputs, origin_img, center, scale = PreProcess(frame, track_bboxs, cfg, num_peroson)
+            inputs, origin_img, center, scale = PreProcess(frame, track_bboxs, cfg, num_peroson)  # frame是原始的1280*720的图像，inputs是处理完之后的
 
             inputs = inputs[:, [2, 1, 0]]
             inputs = inputs.cpu().numpy()
