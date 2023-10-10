@@ -6,10 +6,13 @@
 @Date    ：2023/05/05 19:20
 @Des     ：作为传输的服务，一个Socket实例
 """
+import base64
 import datetime
+import hashlib
 import json
 import logging
 import socket
+import websockets
 import struct
 
 import cv2
@@ -53,23 +56,24 @@ class SocketServer:
     """
 
     def __init__(self, host="127.0.0.1", port=5001):
+
         self.status = SocketStatus.READY
         # Socket端口开在5001端口上面
         self.address = (host, port)
         # 创建客户端套接字
         self.socket_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        #############################
+        self.socket_server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        #############################
         # 设置成非阻塞
         self.socket_server.bind(self.address)
-        self.socket_server.listen()
+        self.socket_server.listen(5)
         logging.info("========================= WAITING FOR A CONNECTION =========================")
         print("========================= 等待一个连接 =========================")
         self.conn, address = self.socket_server.accept()
         self.conn.setblocking(False)
-        logging.info("========================= SOCKET CONNECTION IS CREATED =========================")
-        print("========================= 连接已经建立 =========================")
         self.status = SocketStatus.RUNNING
         self.data = b''
-
         self.is_loaded = False
         self.start_predict = False
         self.onnx = None
@@ -79,33 +83,136 @@ class SocketServer:
         self.current_prediction_movement = None
         # 当前正在预测的动作的预测次数
         self.current_prediction_times = 0
+        data = self.conn.recv(1024)  # 获取客户端发送的消息
+        # 想将http协议的数据处理成字典的形式方便后续取值
+        header_dict = self.get_headers(data)  # 将一大堆请求头转换成字典数据  类似于wsgiref模块
+        client_random_string = header_dict['Sec-WebSocket-Key']  # 获取浏览器发送过来的随机字符串
+        # magic string拼接
+        magic_string = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'  # 全球共用的随机字符串 一个都不能写错
+        # 确认握手Sec-WebSocket-Key固定格式：headers头部的Sec-WebSocket-Key+'258EAFA5-E914-47DA-95CA-C5AB0DC85B11'
+        # 确认握手的秘钥值为 传入的秘钥+magic_string，使用sha1算法加密，然后base64转码
+        value = client_random_string + magic_string  # 拼接
+
+        # 算法加密 对请求头中的sec-websocket-key进行加密
+        ac = base64.b64encode(hashlib.sha1(value.encode('utf-8')).digest())  # 加密处理
+
+        # 将处理好的结果再发送给客户端校验
+        tpl = "HTTP/1.1 101 Switching Protocols\r\n" \
+              "Upgrade:websocket\r\n" \
+              "Connection: Upgrade\r\n" \
+              "Sec-WebSocket-Accept: %s\r\n" \
+              "WebSocket-Location: ws://127.0.0.1:8080\r\n\r\n"
+        response_str = tpl % ac.decode('utf-8')  # 处理到响应头中
+
+        # 将随机字符串给浏览器返回回去
+        print(f"建立连接,加密验证key{ac}")
+        logging.info("========================= SOCKET CONNECTION IS CREATED =========================")
+        print("========================= 连接已经建立 =========================")
+        print((bytes(response_str, encoding='utf-8')))
+        self.conn.send(bytes(response_str, encoding='utf-8'))
+
+    def get_headers(self, data):
+
+        """
+        将请求头格式化成字典
+        :param data:
+        :return:
+        """
+
+        """
+        请求头格式：
+        GET / HTTP/1.1\r\n  # 请求首行，握手阶段还是使用http协议
+        Host: 127.0.0.1:8080\r\n # 请求头
+        Connection: Upgrade\r\n  # 表示要升级协议
+        Pragma: no-cache\r\n
+        Cache-Control: no-cache\r\n
+        User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.72 Safari/537.36\r\n
+        Upgrade: websocket\r\n  # 要升级协议到websocket协议
+        Origin: http://localhost:63342\r\n
+        Sec-WebSocket-Version: 13\r\n  # 表示websocket的版本。如果服务端不支持该版本，需要返回一个Sec-WebSocket-Versionheader，里面包含服务端支持的版本号
+        Accept-Encoding: gzip, deflate, br\r\n
+        Accept-Language: zh-CN,zh;q=0.9,en;q=0.8\r\n
+        Sec-WebSocket-Key: 07EWNDBSpegw1vfsIBJtkg==\r\n # 对应服务端响应头的Sec-WebSocket-Accept，由于没有同源限制，websocket客户端可任意连接支持websocket的服务。这个就相当于一个钥匙一把锁，避免多余的，无意义的连接
+        Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits\r\n\r\n
+        """
+        header_dict = {}
+        data = str(data, encoding='utf-8')
+
+        header, body = data.split('\r\n\r\n', 1)  # 因为请求头信息结尾都是\r\n,并且最后末尾部分是\r\n\r\n；
+        header_list = header.split('\r\n')
+        for i in range(0, len(header_list)):
+            if i == 0:
+                if len(header_list[i].split(' ')) == 3:
+                    header_dict['method'], header_dict['url'], header_dict['protocol'] = header_list[i].split(' ')
+            else:
+                k, v = header_list[i].split(':', 1)
+                header_dict[k] = v.strip()
+        return header_dict
+
+
 
     def reInit(self):
-        self.socket_server.listen()
+        self.socket_server.listen(5)
         logging.info("========================= WAITING FOR A CONNECTION =========================")
         print("========================= 等待一个连接 =========================")
         self.conn, address = self.socket_server.accept()
         self.conn.setblocking(False)
-        logging.info("========================= SOCKET CONNECTION IS CREATED =========================")
-        print("========================= 连接已经建立 =========================")
         self.status = SocketStatus.RUNNING
         self.data = b''
         self.is_loaded = False
         self.start_predict = False
+        self.onnx = None
+        self.raw_model_prediction = None
 
         # 当前正在预测的动作
         self.current_prediction_movement = None
         # 当前正在预测的动作的预测次数
         self.current_prediction_times = 0
+        data = self.conn.recv(1024)  # 获取客户端发送的消息
+        # 想将http协议的数据处理成字典的形式方便后续取值
+        header_dict = self.get_headers(data)  # 将一大堆请求头转换成字典数据  类似于wsgiref模块
+        client_random_string = header_dict['Sec-WebSocket-Key']  # 获取浏览器发送过来的随机字符串
+        # magic string拼接
+        magic_string = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'  # 全球共用的随机字符串 一个都不能写错
+        # 确认握手Sec-WebSocket-Key固定格式：headers头部的Sec-WebSocket-Key+'258EAFA5-E914-47DA-95CA-C5AB0DC85B11'
+        # 确认握手的秘钥值为 传入的秘钥+magic_string，使用sha1算法加密，然后base64转码
+        value = client_random_string + magic_string  # 拼接
+
+        # 算法加密 对请求头中的sec-websocket-key进行加密
+        ac = base64.b64encode(hashlib.sha1(value.encode('utf-8')).digest())  # 加密处理
+
+        # 将处理好的结果再发送给客户端校验
+        tpl = "HTTP/1.1 101 Switching Protocols\r\n" \
+              "Upgrade:websocket\r\n" \
+              "Connection: Upgrade\r\n" \
+              "Sec-WebSocket-Accept: %s\r\n" \
+              "WebSocket-Location: ws://127.0.0.1:8080\r\n\r\n"
+        response_str = tpl % ac.decode('utf-8')  # 处理到响应头中
+
+        # 将随机字符串给浏览器返回回去
+        print(f"建立连接,加密验证key{ac}")
+        logging.info("========================= SOCKET CONNECTION IS CREATED =========================")
+        print("========================= 连接已经建立 =========================")
+        print((bytes(response_str, encoding='utf-8')))
+        self.conn.send(bytes(response_str, encoding='utf-8'))
+
 
     def send(self, code, msg, data=None):
         try:
+            token = b'\x81'
             data = {"code": code, "data": data, "msg": msg}
             head_bytes = bytes(json.dumps(data), encoding='utf-8')  # 序列化并转成bytes,用于传输
-            head_len_bytes = struct.pack('!I', len(head_bytes))  # 这4个字节里只包含了一个数字,该数字是报头的长度
-            self.conn.sendall(head_len_bytes + head_bytes)
+            length = len(head_bytes)
+            if length < 126:
+                token += struct.pack('B', length)
+            elif length <= 0xFFFF:
+                token += struct.pack('!BH', 126, length)
+            else:
+                token += struct.pack('!BQ', 127, length)
+            send_msg = token + head_bytes
+            self.conn.sendall(send_msg)
         except socket.error as msg:
-            logging.error('Failed to send ' + json.dumps(data) + 'to client' + '. Error: ' + str(msg))
+            print('Failed to send ' + json.dumps(data) + 'to client' + '. Error: ' + str(msg))
 
     def receive(self):
         try:
