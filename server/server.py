@@ -71,7 +71,6 @@ class SocketServer:
         logging.info("========================= WAITING FOR A CONNECTION =========================")
         print("========================= 等待一个连接 =========================")
         self.conn, address = self.socket_server.accept()
-        self.conn.setblocking(False)
         self.status = SocketStatus.RUNNING
         self.data = b''
         self.is_loaded = False
@@ -110,6 +109,8 @@ class SocketServer:
         print("========================= 连接已经建立 =========================")
         print((bytes(response_str, encoding='utf-8')))
         self.conn.send(bytes(response_str, encoding='utf-8'))
+        self.conn.setblocking(False)
+
 
     def get_headers(self, data):
 
@@ -149,7 +150,33 @@ class SocketServer:
                 header_dict[k] = v.strip()
         return header_dict
 
-
+    def get_data(self, info):
+        """
+        前后端进行通信,对前端发生消息进行解密
+        对返回消息进行解码比较复杂，详见数据帧格式解析
+        """
+        payload_len = info[1] & 127
+        if payload_len == 126:
+            extend_payload_len = info[2:4]
+            mask = info[4:8]
+            decoded = info[8:]
+        elif payload_len == 127:
+            extend_payload_len = info[2:10]
+            mask = info[10:14]
+            decoded = info[14:]
+        else:
+            extend_payload_len = None
+            mask = info[2:6]
+            decoded = info[6:]
+        bytes_list = bytearray()  # 使用字节将数据全部收集，再去字符串编码，这样不会导致中文乱码
+        for i in range(len(decoded)):
+            chunk = decoded[i] ^ mask[i % 4]  # 异或运算
+            bytes_list.append(chunk)
+        try:
+            body = str(bytes_list, encoding='utf-8')
+        except:
+            return None
+        return body
 
     def reInit(self):
         self.socket_server.listen(5)
@@ -217,26 +244,23 @@ class SocketServer:
     def receive(self):
         try:
             data = self.conn.recv(1024)
+            packet = self.get_data(data)
             if data:
-                self.data += data
-                # 如果已经接收到了固定长度的帧头，那么就解析，获取消息体的长度
-                if len(self.data) >= header_size:
-                    length = struct.unpack("!I", self.data[:header_size])[0]
-                    # 如果已经收到了完整的消息体，那么就去处理
-                    if len(self.data[header_size:]) >= length:
-                        packet = self.data[header_size:header_size + length]
-                        self.data = self.data[header_size + length:]
-                        try:
-                            request = json.loads(packet)
-                            return request
-                        except json.decoder.JSONDecodeError:
-                            raise DataDecodeException("'{}' can not be parsed".format(str(request.decode("utf-8"))))
+                if packet is not None:
+                    try:
+                        request = json.loads(packet)
+                        return request
+                    except json.decoder.JSONDecodeError:
+                        pass
             else:
                 print("========================= CLIENT CONNECTION IS CLOSED =========================")
                 self.conn.close()
         except socket.error as e:
             pass
         return None
+
+
+
 
     def close(self):
         self.conn.close()

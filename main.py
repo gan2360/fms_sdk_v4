@@ -6,6 +6,7 @@
 @Date    ：2023/05/05 19:20
 @Des     ：启动程序，主程序
 """
+import json
 import os
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
@@ -71,7 +72,7 @@ if __name__ == '__main__':
     cur_frames = []
     processInstancesAlive = False
     score_op = ScoreOp()
-    socket_server = SocketServer("127.0.0.1")
+    socket_server = SocketServer("127.0.0.1") #10.30.51.228
     while socket_server.status != SocketStatus.CLOSED:
         # 如果获取数据的进程没有启动，并且已经要求开始预测了
         # 并修改状态
@@ -96,9 +97,13 @@ if __name__ == '__main__':
                                                    yoloModel=socket_server.yoloModel,
                                                    image_feature=map_data[0],
                                                    pressure_feature=map_data[1])
+
+                    # socket_server.send(code=statusCode.TEST_PREDICTION_CONNECT_MOVEMENT_PREDICTION,
+                    #                    msg=datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
+                    #                    data=key_points)
                     socket_server.send(code=statusCode.TEST_PREDICTION_CONNECT_MOVEMENT_PREDICTION,
                                        msg=datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
-                                       data=key_points)
+                                       data={"key_points":key_points, "pressure": json.dumps(map_data[1].tolist())})
                 except Exception as e:
                     print("出错了:", str(e))
                     continue
