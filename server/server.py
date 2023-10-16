@@ -12,7 +12,6 @@ import hashlib
 import json
 import logging
 import socket
-import websockets
 import struct
 
 import cv2
